@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>מפת בית הספר בתלת־ממד · תיכון כצנלסון</title>
+<meta name="description" content="מפה תלת־ממדית של תיכון כצנלסון כפר סבא: קומות, אגפים וחדרים, עם חיפוש.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <img src="logo.jpg" alt="לוגו תיכון כצנלסון" class="logo" width="44" height="34">
+    <div class="titles"><h1>מפת בית הספר</h1><span class="sub">תיכון כצנלסון · תלת־ממד</span></div>
+  </div>
+  <div class="search" role="search">
+    <label for="q" class="sr">איפה נמצא...?</label>
+    <input id="q" type="search" placeholder="איפה נמצא...? (חדר מורים, ספרייה, מעבדה)" autocomplete="off" enterkeyhint="search">
+    <ul id="sugg" class="sugg" role="listbox" hidden></ul>
+  </div>
+</header>
+
+<main id="stage" aria-label="מפה תלת־ממדית של בית הספר">
+  <canvas id="c" aria-hidden="true"></canvas>
+  <div id="hint" class="hint">גוררים לסיבוב · צובטים לזום · נוגעים בחדר לפרטים</div>
+  <aside id="legend" class="legend" aria-label="מקרא"></aside>
+  <section id="card" class="card" hidden aria-live="polite">
+    <button class="x" id="cardClose" aria-label="סגירה">×</button>
+    <div class="card-num" id="cNum"></div>
+    <h2 id="cName"></h2>
+    <p id="cMeta"></p>
+    <p id="cNote" class="note"></p>
+  </section>
+  <section id="list" class="list" hidden aria-label="רשימת חדרים">
+    <div class="list-head"><h2>כל החדרים לפי מבנה וקומה</h2><button class="x" id="listClose" aria-label="סגירת הרשימה">×</button></div>
+    <p id="noGL" class="nogl" hidden>התצוגה התלת־ממדית לא נתמכת במכשיר הזה, אז הנה המפה כרשימה 🙂</p>
+    <div id="listBody"></div>
+  </section>
+</main>
+
+<nav class="floors" aria-label="בחירת קומה">
+  <div class="chips" id="chips">
+    <button data-f="all" class="chip on">כל הקומות</button>
+    <button data-f="1" class="chip f1">קומה עליונה</button>
+    <button data-f="0" class="chip f0">כניסה</button>
+    <button data-f="-1" class="chip fm1">מינוס אחד</button>
+  </div>
+  <div class="tools">
+    <button id="explode" class="tool" aria-pressed="true">↕ קומות צמודות</button>
+    <button id="reset" class="tool">⟲ מבט התחלתי</button>
+    <button id="top" class="tool">⬒ מלמעלה</button>
+    <button id="listBtn" class="tool">☰ רשימה</button>
+  </div>
+</nav>
+<footer class="credit">יצרה: עינבל אריאלי</footer>
+<script type="module" src="app.js"></script>
+</body>
+</html>
