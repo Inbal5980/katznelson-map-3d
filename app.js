@@ -18,7 +18,7 @@ function buildLegend(){
   for (const k in TYPES) h += `<div class="row"><span class="sw" style="background:${TYPES[k][1]}"></span>${TYPES[k][0]}</div>`;
   h += `<h3 style="margin-top:8px">צבע הרצפה</h3>`;
   for (const f of ['1','0','-1']) h += `<div class="row"><span class="fl" style="background:${FLOOR_COLOR[f]}"></span>${FLOOR_NAME[f]}</div>`;
-  h += `<div class="row">🛡️ חדר שהוא גם מקלט</div></details>`;
+  h += `<div class="row">🛡️ חדר שהוא גם מקלט</div><div class="row">📷 יש תמונה, נוגעים כדי לראות</div></details>`;
   $('#legend').innerHTML = h;
 }
 buildLegend();
@@ -220,7 +220,7 @@ function addBuilding(b){
     m.userData = {room:r, floor:r.floor, kind:'room', baseY:0.7, color:col.clone(), h};
     group.add(m); roomMeshes.push(m);
     // label on the roof
-    const lines = (r.label||shortName(r)).split('\n').map((t,i)=>({text:t, size:i?42:54, weight:i?500:700, color:i?'#3A4560':'#1F2A44'}));
+    const lines = ((r.img?'📷 ':'')+(r.label||shortName(r))).split('\n').map((t,i)=>({text:t, size:i?42:54, weight:i?500:700, color:i?'#3A4560':'#1F2A44'}));
     const aspect = r.w / r.d;
     const cw = 512, ch = Math.max(128, Math.min(512, Math.round(512/aspect)));
     const tex = textCanvas(lines, cw, ch);
@@ -238,7 +238,7 @@ function addBuilding(b){
     group.add(lab); labelsByFloor[r.floor].push(lab);
   }
   // building name tag (sprite)
-  const tex = textCanvas([{text:b.name, size:46, weight:700, color:'#ffffff'}], 384, 96, {bg:'rgba(31,42,68,0.86)'});
+  const tex = textCanvas([{text:(b.img?'📷 ':'')+b.name, size:46, weight:700, color:'#ffffff'}], 384, 96, {bg:'rgba(31,42,68,0.86)'});
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false}));
   const sw = b.rooms.length>3 || b.w>20 ? 11 : 8; sp.scale.set(sw, sw*96/384, 1);
   sp.position.set(b.x+b.w/2, 0, b.z - 0.5); sp.renderOrder = 10;
@@ -300,7 +300,7 @@ function addEntrance(e){
   const cone = new THREE.Mesh(new THREE.ConeGeometry(1.6, 3.6, 24), new THREE.MeshStandardMaterial({color:0xFF7A59}));
   cone.rotation.x = Math.PI; cone.position.set(e.x, levelY(0)+5, e.z); scene.add(cone);
   cone.userData.bob = true; window.__cone = cone;
-  const t = textCanvas([{text:'🚪 '+e.label, size:44, weight:700, color:'#ffffff'}], 512, 96, {bg:'#FF7A59'});
+  const t = textCanvas([{text:'🚪 '+e.label+(e.img?' 📷':''), size:44, weight:700, color:'#ffffff'}], 512, 96, {bg:'#FF7A59'});
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:t, transparent:true, depthTest:false}));
   sp.scale.set(15, 15*96/512, 1); sp.position.set(e.x, levelY(0)+9, e.z); sp.renderOrder = 11; scene.add(sp);
   window.__entSp = sp;
