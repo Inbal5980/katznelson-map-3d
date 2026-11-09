@@ -73,3 +73,9 @@ button:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
 }
 
 @media (max-width:640px){.card{bottom:calc(178px + env(safe-area-inset-bottom));max-height:calc(100% - 300px);overflow:auto}}
+
+.card .ph{margin-top:10px;display:grid;gap:8px}
+.card .ph figure{margin:0}
+.card .ph img{display:block;width:100%;height:auto;max-height:34vh;object-fit:cover;border-radius:14px;background:#F3EEE5}
+.card .ph figcaption{font-size:12px;color:var(--muted);margin-top:3px}
+.card .ph figcaption:empty{display:none}

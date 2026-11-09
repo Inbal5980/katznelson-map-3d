@@ -6,6 +6,9 @@ const SLAB_COLOR = {'-1':0xDCE9F8,'0':0xF1E7DA,'1':0xFADDD8};
 const TYPES = DATA.types;
 const ROOMS = [];
 DATA.buildings.forEach(b => b.rooms.forEach(r => ROOMS.push(r)));
+// photos: relative on GitHub Pages / local copies; the tab.bot copy loads them from GitHub Pages (size limits)
+const IMG_BASE = /(^|\.)sites\.tab\.bot$/.test(location.hostname) ? 'https://inbal5980.github.io/katznelson-map-3d/' : '';
+const dispName = r => r.num ? ((r.type==='class' && /^כיתה/.test(r.name)) ? `כיתה ${r.num}` : `${r.name.replace(/ \(מקלט\)/,'')} · ${r.num}`) : r.name;
 const norm = s => (s||'').replace(/[׳״'"`\-–־\/()]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
 
 /* ---------- legend ---------- */
@@ -29,7 +32,7 @@ function buildList(){
     for (const f of [1,0,-1]){
       const rs = b.rooms.filter(r=>r.floor===f); if(!rs.length) continue;
       h += `<h4>${FLOOR_NAME[f]}</h4><ul>`;
-      for (const r of rs) h += `<li><button data-id="${r.id}"><span class="dot" style="background:${TYPES[r.type][1]}"></span>${r.name}${r.shelter?' 🛡️':''}</button></li>`;
+      for (const r of rs) h += `<li><button data-id="${r.id}"><span class="dot" style="background:${TYPES[r.type][1]}"></span>${dispName(r)}${r.homeroom?' · '+r.homeroom:''}${r.shelter?' 🛡️':''}</button></li>`;
       h += `</ul>`;
     }
     h += `</div>`;
@@ -47,10 +50,19 @@ $('#listClose').onclick = ()=>{ $('#list').hidden = true; };
 
 /* ---------- card ---------- */
 function showCard(r){
+  const ph = $('#cImg');
+  ph.innerHTML = (r.img||[]).map(i=>`<figure><img src="${IMG_BASE+i.src}" alt="${i.cap||r.name}" loading="lazy" decoding="async"><figcaption>${i.cap||''}</figcaption></figure>`).join('');
+  ph.hidden = !(r.img && r.img.length);
+  if (!r.type){ // a place that is not a room: entrance, wing, memorial
+    $('#cNum').textContent = r.kicker || 'מקום'; $('#cNum').style.background = '#FFE1D6';
+    $('#cName').textContent = r.name; $('#cMeta').textContent = r.meta || ''; $('#cNote').textContent = r.note || '';
+    $('#card').hidden = false; return;
+  }
   const t = TYPES[r.type][0];
-  $('#cNum').textContent = r.buildingName;
+  $('#cNum').textContent = r.num ? `חדר ${r.num}` + (r.homeroom ? ` · ${r.homeroom}` : '') : r.buildingName;
   $('#cNum').style.background = TYPES[r.type][1]+'55';
-  $('#cName').innerHTML = r.name.replace(/ \(מקלט\)/,'') + (r.shelter?'<span class="badge">🛡️ מקלט</span>':'');
+  const nm = (r.type==='class' && r.num && /^כיתה/.test(r.name)) ? `כיתה ${r.num}` + (r.homeroom ? ` · ${r.homeroom}` : '') : r.name.replace(/ \(מקלט\)/,'');
+  $('#cName').innerHTML = nm + (r.shelter?'<span class="badge">🛡️ מקלט</span>':'');
   $('#cMeta').innerHTML = `<b style="color:${FLOOR_COLOR[r.floor]}">${FLOOR_NAME[r.floor]}</b> · ${r.buildingName} · ${t}`;
   $('#cNote').textContent = r.note || (r.uncertain ? 'המיקום משוער לפי השרטוט' : '');
   $('#card').hidden = false;
@@ -67,9 +79,9 @@ function renderSugg(){
     sugg.innerHTML = `<li class="quick" role="presentation">${QUICK.map(x=>`<button type="button" data-q="${x}">${x}</button>`).join('')}</li>`;
     sugg.hidden = false; results=[]; return;
   }
-  results = ROOMS.filter(r => norm(r.name+' '+r.buildingName+' '+(r.alias||'')+(r.shelter?' מקלט':'')).includes(v)).slice(0,9);
+  results = ROOMS.filter(r => norm(r.name+' '+r.buildingName+' '+(r.num||'')+' '+(r.homeroom||'')+' '+(r.alias||'')+(r.shelter?' מקלט':'')).includes(v)).slice(0,9);
   if (!results.length){ sugg.innerHTML = `<li role="option" aria-disabled="true">לא מצאתי 🤔 נסו שם של חדר או אגף</li>`; sugg.hidden=false; return; }
-  sugg.innerHTML = results.map((r,i)=>`<li role="option" data-i="${i}" ${i===active?'aria-selected="true"':''}><span class="dot" style="background:${TYPES[r.type][1]}"></span><span>${r.name}</span><span class="m">${FLOOR_NAME[r.floor]}</span></li>`).join('');
+  sugg.innerHTML = results.map((r,i)=>`<li role="option" data-i="${i}" ${i===active?'aria-selected="true"':''}><span class="dot" style="background:${TYPES[r.type][1]}"></span><span>${dispName(r)}${r.homeroom?' · '+r.homeroom:''}</span><span class="m">${FLOOR_NAME[r.floor]}</span></li>`).join('');
   sugg.hidden = false;
 }
 q.addEventListener('focus', renderSugg);
@@ -87,12 +99,12 @@ sugg.addEventListener('pointerdown', e=>{
   const li = e.target.closest('li[data-i]'); if (li) choose(results[+li.dataset.i]);
 });
 document.addEventListener('pointerdown', e=>{ if(!e.target.closest('.search')) sugg.hidden = true; });
-function choose(r){ sugg.hidden = true; q.blur(); q.value = r.name.replace(/ \(מקלט\)/,''); if (gl) focusRoom(r); else showCard(r); }
+function choose(r){ sugg.hidden = true; q.blur(); q.value = dispName(r).replace(/ \(מקלט\)/,''); if (gl) focusRoom(r); else showCard(r); }
 
 /* ---------- 3D ---------- */
 let gl = false, THREE, OrbitControls;
 let renderer, scene, camera, controls, raycaster, pointer;
-const roomMeshes = [], slabs = [], labelsByFloor = {'-1':[],'0':[],'1':[]};
+const roomMeshes = [], extraHits = [], slabs = [], labelsByFloor = {'-1':[],'0':[],'1':[]};
 let mode = 'all', exploded = true, selected = null, fly = null;
 const FH = 5.6;
 
@@ -141,7 +153,9 @@ async function init3D(){
     pointer.set(((e.clientX-rect.left)/rect.width)*2-1, -((e.clientY-rect.top)/rect.height)*2+1);
     raycaster.setFromCamera(pointer, camera);
     const hits = raycaster.intersectObjects(roomMeshes.filter(m=>m.material.opacity>0.5 && m.visible), false);
-    if (hits.length){ const r = hits[0].object.userData.room; select(r); showCard(r); }
+    if (hits.length){ const r = hits[0].object.userData.room; select(r); showCard(r); return; }
+    const xh = raycaster.intersectObjects(extraHits.filter(o=>o.visible && (!o.material || o.material.opacity>0.5)), false);
+    if (xh.length){ select(null); showCard(xh[0].object.userData.place); }
     else { select(null); $('#card').hidden = true; }
   });
   controls.addEventListener('start', hideHint);
@@ -151,6 +165,9 @@ async function init3D(){
   layout(true);
   renderer.setAnimationLoop(tick);
   window.__map = {ready:true, rooms:ROOMS.length};
+  window.__proj = name => { const m = roomMeshes.find(x=>x.userData.room.name===name); if(!m) return null;
+    const v = new THREE.Vector3(m.userData.room.x, m.position.y + m.userData.h, m.userData.room.z).project(camera), rc = canvas.getBoundingClientRect();
+    return {x: rc.left + (v.x+1)/2*rc.width, y: rc.top + (1-v.y)/2*rc.height}; };
 }
 
 function rrShape(w,d,r){
@@ -227,6 +244,7 @@ function addBuilding(b){
   sp.position.set(b.x+b.w/2, 0, b.z - 0.5); sp.renderOrder = 10;
   sp.userData = {kind:'tag', top: Math.max(...floors), baseY: 0, bld:b};
   scene.add(sp); slabs.push(sp);
+  if (b.img){ sp.userData.place = {name:b.name, kicker:'אגף', meta:'נגיעה בחדר מציגה את פרטיו', img:b.img}; extraHits.push(sp); }
 }
 function addArea(a){
   let mesh;
@@ -239,10 +257,27 @@ function addArea(a){
     mesh = new THREE.Mesh(new THREE.CircleGeometry(4, 32), new THREE.MeshStandardMaterial({color:0xE6DDCF, roughness:1}));
     const stone = new THREE.Mesh(softBox(3, 1.2, 2.4, 0.4), new THREE.MeshStandardMaterial({color:0xBFB4A3}));
     stone.position.set(a.x+a.w/2, 0, a.z+a.d/2); stone.castShadow = true; scene.add(stone);
+    if (a.img){ stone.userData.place = {name:a.name, kicker:'מקום בבית הספר', img:a.img}; extraHits.push(stone); }
   } else {
     mesh = new THREE.Mesh(new THREE.ShapeGeometry(rrShape(a.w, a.d, a.corridor?1.5:3)), new THREE.MeshStandardMaterial({color:a.corridor?0xE9E1D4:0xE2EFDF, roughness:1}));
   }
   mesh.rotation.x = -Math.PI/2; mesh.position.set(a.x+a.w/2, 0.03, a.z+a.d/2); mesh.receiveShadow = true; scene.add(mesh);
+  if (a.floor !== undefined){ // a corridor that belongs to a floor (the central corridor = entrance floor): rides with that floor
+    mesh.geometry = new THREE.ShapeGeometry(rrShape(a.w, a.d, 1.5));
+    mesh.material = new THREE.MeshStandardMaterial({color:0xD9C7A8, roughness:1, transparent:true, side:THREE.DoubleSide});
+    mesh.userData = {floor:a.floor, kind:'edge', baseY:0.5}; slabs.push(mesh);
+    const edge = new THREE.Mesh(new THREE.ShapeGeometry(rrShape(a.w+0.6, a.d+0.6, 1.8)), new THREE.MeshBasicMaterial({color:new THREE.Color(FLOOR_COLOR[a.floor]), transparent:true, side:THREE.DoubleSide}));
+    edge.rotation.x = -Math.PI/2; edge.position.set(a.x+a.w/2, 0, a.z+a.d/2); edge.userData = {floor:a.floor, kind:'edge', baseY:0.46}; scene.add(edge); slabs.push(edge);
+    for (const fz of [0.2, 0.5, 0.8]){
+      const t = textCanvas([{text:'⇕ '+a.name, size:50, weight:800, color:'#5B4630'}], 512, 96);
+      const lw = Math.min(a.d*0.24, 26);
+      const lab = new THREE.Mesh(new THREE.PlaneGeometry(lw, lw*96/512), new THREE.MeshBasicMaterial({map:t, transparent:true, depthWrite:false}));
+      lab.rotation.x = -Math.PI/2; lab.rotation.z = -Math.PI/2;
+      lab.position.set(a.x+a.w/2, 0, a.z + a.d*fz); lab.userData = {floor:a.floor, kind:'label', baseY:0.62};
+      scene.add(lab); labelsByFloor[a.floor].push(lab);
+    }
+    return;
+  }
   if (a.trees){
     const trunkM = new THREE.MeshStandardMaterial({color:0xA88B6A, roughness:1}), leafM = new THREE.MeshStandardMaterial({color:0x9CCB8E, roughness:.9});
     const trunkG = new THREE.CylinderGeometry(0.25,0.3,1.6,8), leafG = new THREE.SphereGeometry(1.4,14,10);
@@ -263,11 +298,14 @@ function addArea(a){
 }
 function addEntrance(e){
   const cone = new THREE.Mesh(new THREE.ConeGeometry(1.6, 3.6, 24), new THREE.MeshStandardMaterial({color:0xFF7A59}));
-  cone.rotation.x = Math.PI; cone.position.set(e.x, 6.5, e.z); scene.add(cone);
+  cone.rotation.x = Math.PI; cone.position.set(e.x, levelY(0)+5, e.z); scene.add(cone);
   cone.userData.bob = true; window.__cone = cone;
   const t = textCanvas([{text:'🚪 '+e.label, size:44, weight:700, color:'#ffffff'}], 512, 96, {bg:'#FF7A59'});
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:t, transparent:true, depthTest:false}));
-  sp.scale.set(15, 15*96/512, 1); sp.position.set(e.x, 10.5, e.z); sp.renderOrder = 11; scene.add(sp);
+  sp.scale.set(15, 15*96/512, 1); sp.position.set(e.x, levelY(0)+9, e.z); sp.renderOrder = 11; scene.add(sp);
+  window.__entSp = sp;
+  const place = {name:e.label, kicker:'כניסה', meta:'קומת הכניסה', img:e.img};
+  if (e.img){ cone.userData.place = place; sp.userData.place = place; extraHits.push(cone, sp); }
 }
 
 /* layout: compute target y / opacity per object */
@@ -342,7 +380,11 @@ function tick(now){
     o.visible = nxt > 0.02;
   }
   if (selected){ const s = 0.4 + 0.25*Math.sin(now/220); for (const m of roomMeshes) if (m.userData.sel) m.material.emissiveIntensity = s; }
-  if (window.__cone) window.__cone.position.y = 6.5 + Math.sin(now/400)*0.6;
+  if (window.__cone){ // the entrance marker floats just above the ENTRANCE floor (0), wherever that floor is drawn
+    const y0 = levelY(0), hide = mode!=='all' && +mode < 0;
+    window.__cone.position.y = y0 + 4.6 + Math.sin(now/400)*0.6; window.__cone.visible = !hide;
+    if (window.__entSp){ window.__entSp.position.y = y0 + 8.6; window.__entSp.visible = !hide; }
+  }
   if (fly){
     const t = Math.min(1, (now-fly.t0)/fly.dur), e = ease(t);
     camera.position.lerpVectors(fly.fromP, fly.toP, e); controls.target.lerpVectors(fly.fromT, fly.toT, e);
