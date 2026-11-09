@@ -37,6 +37,26 @@
     <p id="cNote" class="note"></p>
     <div id="cImg" class="ph" hidden></div>
   </section>
+  <canvas id="mini" class="mini" hidden aria-hidden="true"></canvas>
+  <div id="walkUI" class="walkui" hidden>
+    <div class="wtop">
+      <button id="walkExit" class="wbtn exit">🗺️ תלת־ממד</button>
+      <button id="wGo" class="wbtn go">📍 קח אותי ל...</button>
+      <button id="wAuto" class="wbtn auto" hidden>▶ אוטומטי</button>
+      <button id="wClear" class="wbtn clr" hidden aria-label="ביטול המסלול">✕ מסלול</button>
+    </div>
+    <div class="wstairs" aria-label="מעבר בין קומות">
+      <button id="wUp" class="wbtn st">⬆ קומה למעלה</button>
+      <div id="wFloor" class="wfloor" aria-live="polite"></div>
+      <button id="wDown" class="wbtn st">⬇ קומה למטה</button>
+    </div>
+    <div class="dpad" aria-label="הליכה">
+      <button class="pk f" data-k="f" aria-label="קדימה"><b>▲</b><span>קדימה</span></button>
+      <button class="pk l" data-k="l" aria-label="פנייה שמאלה"><b>↶</b><span>שמאלה</span></button>
+      <button class="pk b" data-k="b" aria-label="אחורה"><b>▼</b><span>אחורה</span></button>
+      <button class="pk r" data-k="r" aria-label="פנייה ימינה"><b>↷</b><span>ימינה</span></button>
+    </div>
+  </div>
   <section id="list" class="list" hidden aria-label="רשימת חדרים">
     <div class="list-head"><h2>כל החדרים לפי מבנה וקומה</h2><button class="x" id="listClose" aria-label="סגירת הרשימה">×</button></div>
     <p id="noGL" class="nogl" hidden>התצוגה התלת־ממדית לא נתמכת במכשיר הזה, אז הנה המפה כרשימה 🙂</p>
@@ -56,6 +76,7 @@
     <button id="reset" class="tool">⟲ מבט התחלתי</button>
     <button id="top" class="tool">⬒ מלמעלה</button>
     <button id="listBtn" class="tool">☰ רשימה</button>
+    <button id="walkBtn" class="tool walkbtn" hidden>🚶 סיור</button>
   </div>
 </nav>
 <footer class="credit">יצרה: עינבל אריאלי</footer>
