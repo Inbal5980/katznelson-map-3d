@@ -272,7 +272,7 @@ function addArea(a){
       const t = textCanvas([{text:'⇕ '+a.name, size:50, weight:800, color:'#5B4630'}], 512, 96);
       const lw = Math.min(a.d*0.24, 26);
       const lab = new THREE.Mesh(new THREE.PlaneGeometry(lw, lw*96/512), new THREE.MeshBasicMaterial({map:t, transparent:true, depthWrite:false}));
-      lab.rotation.x = -Math.PI/2; lab.rotation.z = -Math.PI/2;
+      lab.rotation.x = -Math.PI/2; lab.rotation.z = Math.PI/2;
       lab.position.set(a.x+a.w/2, 0, a.z + a.d*fz); lab.userData = {floor:a.floor, kind:'label', baseY:0.62};
       scene.add(lab); labelsByFloor[a.floor].push(lab);
     }
