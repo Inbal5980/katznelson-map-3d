@@ -95,7 +95,7 @@ q.addEventListener('keydown', e=>{
 sugg.addEventListener('pointerdown', e=>{
   e.preventDefault();
   const qb = e.target.closest('button[data-q]');
-  if (qb){ q.value = qb.dataset.q; active=-1; renderSugg(); return; }
+  if (qb){ q.value = qb.dataset.q; active=-1; renderSugg(); if (results.length){ choose(results[0]); } return; }
   const li = e.target.closest('li[data-i]'); if (li) choose(results[+li.dataset.i]);
 });
 document.addEventListener('pointerdown', e=>{ if(!e.target.closest('.search')) sugg.hidden = true; });
@@ -758,7 +758,11 @@ function initWalk(){
   $('#walkExit').onclick = exitWalk;
   $('#wUp').onclick = ()=>{ stopAuto(); setWalkFloor(walk.floor+1); };
   $('#wDown').onclick = ()=>{ stopAuto(); setWalkFloor(walk.floor-1); };
-  $('#wGo').onclick = ()=>{ q.value = ''; q.focus(); renderSugg(); toast('📍 בחרו חדר ואראה לכם את הדרך'); };
+  $('#wGo').onclick = ()=>{
+    const v = norm(q.value);
+    if (v){ renderSugg(); if (results.length){ choose(results[0]); return; } }
+    q.value = ''; q.focus(); renderSugg(); toast('📍 בוחרים חדר מהרשימה למעלה, או כותבים שם וטופחים עליו', 5000);
+  };
   $('#wAuto').onclick = startAuto;
   $('#wClear').onclick = ()=>{ clearPath(); select(null); $('#card').hidden = true; };
   document.querySelectorAll('#walkUI .pk').forEach(b=>{
